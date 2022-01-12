@@ -4,6 +4,7 @@ import Regexp from 'path-to-regexp'
 import { cleanPath } from './util/path'
 import { assert, warn } from './util/warn'
 
+// 创建路由映射表
 export function createRouteMap (
   routes: Array<RouteConfig>,
   oldPathList?: Array<string>,
@@ -47,10 +48,12 @@ export function createRouteMap (
     }
   }
 
+  console.log('======= 创建路由映射表 ==========', pathList, pathMap, nameMap)
+  
   return {
-    pathList,
-    pathMap,
-    nameMap
+    pathList, // 所有路径
+    pathMap, // 路径到路由记录的映射
+    nameMap // 命名到路由记录的映射
   }
 }
 

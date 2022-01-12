@@ -60,6 +60,7 @@ export class History {
     this.listeners = []
   }
 
+  // 监听
   listen (cb: Function) {
     this.cb = cb
   }
@@ -87,7 +88,9 @@ export class History {
     let route
     // catch redirect option https://github.com/vuejs/vue-router/issues/3201
     try {
+      // 获取即将跳转路径匹配到的路由
       route = this.router.match(location, this.current)
+      console.log('======== transitionTo匹配到的路由 ==========', route)
     } catch (e) {
       this.errorCbs.forEach(cb => {
         cb(e)
@@ -95,13 +98,16 @@ export class History {
       // Exception should still be thrown
       throw e
     }
+    // 当前路由
     const prev = this.current
     this.confirmTransition(
       route,
       () => {
         this.updateRoute(route)
+        // 执行成功的用户回调
         onComplete && onComplete(route)
         this.ensureURL()
+        // 全局后置钩子函数执行
         this.router.afterHooks.forEach(hook => {
           hook && hook(route, prev)
         })
@@ -133,7 +139,8 @@ export class History {
       }
     )
   }
-
+  
+  // 完成路由的切换
   confirmTransition (route: Route, onComplete: Function, onAbort?: Function) {
     const current = this.current
     this.pending = route
@@ -155,8 +162,11 @@ export class History {
       }
       onAbort && onAbort(err)
     }
+    // 最新理由的索引
     const lastRouteIndex = route.matched.length - 1
+    // 当前路由索引
     const lastCurrentIndex = current.matched.length - 1
+    // 同一路由
     if (
       isSameRoute(route, current) &&
       // in the case the route map has been dynamically appended to
@@ -175,19 +185,27 @@ export class History {
       route.matched
     )
 
+    // 钩子函数执行队列 这里可以确定路由守卫的执行顺序
     const queue: Array<?NavigationGuard> = [].concat(
       // in-component leave guards
+      // 失活钩子
       extractLeaveGuards(deactivated),
       // global before hooks
+      // 全局前置钩子
       this.router.beforeHooks,
+      // 更新钩子
       // in-component update hooks
+      // 更新钩子
       extractUpdateHooks(updated),
       // in-config enter guards
+      // 激活的路由规则守卫
       activated.map(m => m.beforeEnter),
       // async components
+      // 异步组件
       resolveAsyncComponents(activated)
     )
 
+    // 迭代器
     const iterator = (hook: NavigationGuard, next) => {
       if (this.pending !== route) {
         return abort(createNavigationCancelledError(current, route))
@@ -227,6 +245,7 @@ export class History {
       // wait until async components are resolved before
       // extracting in-component enter guards
       const enterGuards = extractEnterGuards(activated)
+      // 全局解析守卫
       const queue = enterGuards.concat(this.router.resolveHooks)
       runQueue(queue, iterator, () => {
         if (this.pending !== route) {
@@ -243,6 +262,7 @@ export class History {
     })
   }
 
+  // 更新路由后，触发history.listen监听的回调函数，即更新app._route为当前路由
   updateRoute (route: Route) {
     this.current = route
     this.cb && this.cb(route)
@@ -303,9 +323,9 @@ function resolveQueue (
     }
   }
   return {
-    updated: next.slice(0, i),
-    activated: next.slice(i),
-    deactivated: current.slice(i)
+    updated: next.slice(0, i), // 更新的路由记录
+    activated: next.slice(i), // 激活的路由记录
+    deactivated: current.slice(i) // 失活的路由记录
   }
 }
 

@@ -6,6 +6,7 @@ export function runQueue (queue: Array<?NavigationGuard>, fn: Function, cb: Func
       cb()
     } else {
       if (queue[index]) {
+        // 异步队列执行
         fn(queue[index], () => {
           step(index + 1)
         })

@@ -38,7 +38,7 @@ export default class VueRouter {
   resolveHooks: Array<?NavigationGuard>
   afterHooks: Array<?AfterNavigationHook>
 
-  constructor (options: RouterOptions = {}) {
+  constructor(options: RouterOptions = {}) {
     if (process.env.NODE_ENV !== 'production') {
       warn(this instanceof VueRouter, `Router must be called with the new operator.`)
     }
@@ -49,9 +49,11 @@ export default class VueRouter {
     this.resolveHooks = []
     this.afterHooks = []
     this.matcher = createMatcher(options.routes || [], this)
+    console.log('========== this.matcher ==========', this.matcher)
 
     // 默认采用hash路由
     let mode = options.mode || 'hash'
+    // 是否优雅降级，浏览器不支持HTML history API
     this.fallback =
       mode === 'history' && !supportsPushState && options.fallback !== false
     if (this.fallback) {
@@ -80,20 +82,20 @@ export default class VueRouter {
     }
   }
 
-  match (raw: RawLocation, current?: Route, redirectedFrom?: Location): Route {
+  match(raw: RawLocation, current?: Route, redirectedFrom?: Location): Route {
     return this.matcher.match(raw, current, redirectedFrom)
   }
 
-  get currentRoute (): ?Route {
+  get currentRoute(): ?Route {
     return this.history && this.history.current
   }
 
-  init (app: any /* Vue component instance */) {
+  init(app: any /* Vue component instance */) {
     process.env.NODE_ENV !== 'production' &&
       assert(
         install.installed,
         `not installed. Make sure to call \`Vue.use(VueRouter)\` ` +
-          `before creating root instance.`
+        `before creating root instance.`
       )
 
     // 将当前实例添加到apps中
@@ -119,6 +121,7 @@ export default class VueRouter {
       return
     }
 
+
     this.app = app
 
     const history = this.history
@@ -133,17 +136,22 @@ export default class VueRouter {
           handleScroll(this, routeOrError, from, false)
         }
       }
+
+      // 设置history监听，以便在路由切换时及时响应
       const setupListeners = routeOrError => {
         history.setupListeners()
         handleInitialScroll(routeOrError)
       }
+      console.log('======= history.transitionTo:currentLocation =======', history.getCurrentLocation())
+      // 初次打开页面匹配到的路由
       history.transitionTo(
-        history.getCurrentLocation(),
+        history.getCurrentLocation(), // 获取当前路由
         setupListeners,
         setupListeners
       )
     }
 
+    // 切换路由时，根实例绑定的_route更新为切换的目标路由，以便后续所有子组件匹配正确的路由信息
     history.listen(route => {
       this.apps.forEach(app => {
         app._route = route
@@ -151,27 +159,30 @@ export default class VueRouter {
     })
   }
 
-  beforeEach (fn: Function): Function {
+  // 全局前置守卫
+  beforeEach(fn: Function): Function {
     return registerHook(this.beforeHooks, fn)
   }
 
-  beforeResolve (fn: Function): Function {
+  // 全局解析守卫
+  beforeResolve(fn: Function): Function {
     return registerHook(this.resolveHooks, fn)
   }
 
-  afterEach (fn: Function): Function {
+  // 全局后置守卫
+  afterEach(fn: Function): Function {
     return registerHook(this.afterHooks, fn)
   }
 
-  onReady (cb: Function, errorCb?: Function) {
+  onReady(cb: Function, errorCb?: Function) {
     this.history.onReady(cb, errorCb)
   }
 
-  onError (errorCb: Function) {
+  onError(errorCb: Function) {
     this.history.onError(errorCb)
   }
 
-  push (location: RawLocation, onComplete?: Function, onAbort?: Function) {
+  push(location: RawLocation, onComplete?: Function, onAbort?: Function) {
     // $flow-disable-line
     if (!onComplete && !onAbort && typeof Promise !== 'undefined') {
       return new Promise((resolve, reject) => {
@@ -182,7 +193,7 @@ export default class VueRouter {
     }
   }
 
-  replace (location: RawLocation, onComplete?: Function, onAbort?: Function) {
+  replace(location: RawLocation, onComplete?: Function, onAbort?: Function) {
     // $flow-disable-line
     if (!onComplete && !onAbort && typeof Promise !== 'undefined') {
       return new Promise((resolve, reject) => {
@@ -193,19 +204,19 @@ export default class VueRouter {
     }
   }
 
-  go (n: number) {
+  go(n: number) {
     this.history.go(n)
   }
 
-  back () {
+  back() {
     this.go(-1)
   }
 
-  forward () {
+  forward() {
     this.go(1)
   }
 
-  getMatchedComponents (to?: RawLocation | Route): Array<any> {
+  getMatchedComponents(to?: RawLocation | Route): Array<any> {
     const route: any = to
       ? to.matched
         ? to
@@ -224,7 +235,7 @@ export default class VueRouter {
     )
   }
 
-  resolve (
+  resolve(
     to: RawLocation,
     current?: Route,
     append?: boolean
@@ -252,18 +263,18 @@ export default class VueRouter {
     }
   }
 
-  getRoutes () {
+  getRoutes() {
     return this.matcher.getRoutes()
   }
 
-  addRoute (parentOrRoute: string | RouteConfig, route?: RouteConfig) {
+  addRoute(parentOrRoute: string | RouteConfig, route?: RouteConfig) {
     this.matcher.addRoute(parentOrRoute, route)
     if (this.history.current !== START) {
       this.history.transitionTo(this.history.getCurrentLocation())
     }
   }
 
-  addRoutes (routes: Array<RouteConfig>) {
+  addRoutes(routes: Array<RouteConfig>) {
     if (process.env.NODE_ENV !== 'production') {
       warn(false, 'router.addRoutes() is deprecated and has been removed in Vue Router 4. Use router.addRoute() instead.')
     }
@@ -274,15 +285,16 @@ export default class VueRouter {
   }
 }
 
-function registerHook (list: Array<any>, fn: Function): Function {
+function registerHook(list: Array<any>, fn: Function): Function {
   list.push(fn)
+  // 返回一个人移除钩子函数
   return () => {
     const i = list.indexOf(fn)
     if (i > -1) list.splice(i, 1)
   }
 }
 
-function createHref (base: string, fullPath: string, mode) {
+function createHref(base: string, fullPath: string, mode) {
   var path = mode === 'hash' ? '#' + fullPath : fullPath
   return base ? cleanPath(base + '/' + path) : path
 }

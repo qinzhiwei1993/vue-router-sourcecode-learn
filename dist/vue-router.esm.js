@@ -335,6 +335,7 @@ var View = {
     data.routerViewDepth = depth;
 
     // render previous view if the tree is inactive and kept-alive
+    // 组件是否缓存 keep-alive
     if (inactive) {
       var cachedData = cache[name];
       var cachedComponent = cachedData && cachedData.component;
@@ -1308,6 +1309,7 @@ function install (Vue) {
         // 将每一个组件的 _routerRoot 都指向根 Vue 实例
         this._routerRoot = (this.$parent && this.$parent._routerRoot) || this;
       }
+      // 注册实例
       registerInstance(this, this);
     },
     destroyed: function destroyed () {
@@ -1341,6 +1343,7 @@ var inBrowser = typeof window !== 'undefined';
 
 /*  */
 
+// 创建路由映射表
 function createRouteMap (
   routes,
   oldPathList,
@@ -1380,10 +1383,12 @@ function createRouteMap (
     }
   }
 
+  console.log('======= 创建路由映射表 ==========', pathList, pathMap, nameMap);
+  
   return {
-    pathList: pathList,
-    pathMap: pathMap,
-    nameMap: nameMap
+    pathList: pathList, // 所有路径
+    pathMap: pathMap, // 路径到路由记录的映射
+    nameMap: nameMap // 命名到路由记录的映射
   }
 }
 
@@ -1555,7 +1560,6 @@ function normalizePath (
 
 
 
-
 // 创建路由规则
 function createMatcher (
   routes,
@@ -1598,6 +1602,7 @@ function createMatcher (
     redirectedFrom
   ) {
     var location = normalizeLocation(raw, currentRoute, false, router);
+    console.log('======== match:location ==========', location);
     var name = location.name;
 
     if (name) {
@@ -2263,6 +2268,7 @@ History.prototype.transitionTo = function transitionTo (
   // catch redirect option https://github.com/vuejs/vue-router/issues/3201
   try {
     route = this.router.match(location, this.current);
+    console.log('======== transitionTo匹配到的路由 ==========', route);
   } catch (e) {
     this.errorCbs.forEach(function (cb) {
       cb(e);
@@ -2904,7 +2910,7 @@ var AbstractHistory = /*@__PURE__*/(function (History) {
 
 /*  */
 
-var VueRouter = function VueRouter (options) {
+var VueRouter = function VueRouter(options) {
   if ( options === void 0 ) options = {};
 
   if (process.env.NODE_ENV !== 'production') {
@@ -2917,9 +2923,11 @@ var VueRouter = function VueRouter (options) {
   this.resolveHooks = [];
   this.afterHooks = [];
   this.matcher = createMatcher(options.routes || [], this);
+  console.log('========== this.matcher ==========', this.matcher);
 
   // 默认采用hash路由
   var mode = options.mode || 'hash';
+  // 是否优雅降级，浏览器不支持HTML history API
   this.fallback =
     mode === 'history' && !supportsPushState && options.fallback !== false;
   if (this.fallback) {
@@ -2965,10 +2973,9 @@ VueRouter.prototype.init = function init (app /* Vue component instance */) {
     assert(
       install.installed,
       "not installed. Make sure to call `Vue.use(VueRouter)` " +
-        "before creating root instance."
+      "before creating root instance."
     );
 
-      
   // 将当前实例添加到apps中
   this.apps.push(app);
 
@@ -2992,6 +2999,7 @@ VueRouter.prototype.init = function init (app /* Vue component instance */) {
     return
   }
 
+
   this.app = app;
 
   var history = this.history;
@@ -3006,17 +3014,22 @@ VueRouter.prototype.init = function init (app /* Vue component instance */) {
         handleScroll(this$1$1, routeOrError, from, false);
       }
     };
+
+    // 设置history监听，以便在路由切换时及时响应
     var setupListeners = function (routeOrError) {
       history.setupListeners();
       handleInitialScroll(routeOrError);
     };
+    console.log('======= history.transitionTo:currentLocation =======', history.getCurrentLocation());
+    // 初次打开页面匹配到的路由
     history.transitionTo(
-      history.getCurrentLocation(),
+      history.getCurrentLocation(), // 获取当前路由
       setupListeners,
       setupListeners
     );
   }
 
+  // 切换路由时，根实例绑定的_route更新为切换的目标路由，以便后续所有子组件匹配正确的路由信息
   history.listen(function (route) {
     this$1$1.apps.forEach(function (app) {
       app._route = route;
@@ -3145,7 +3158,7 @@ VueRouter.prototype.addRoutes = function addRoutes (routes) {
 
 Object.defineProperties( VueRouter.prototype, prototypeAccessors );
 
-function registerHook (list, fn) {
+function registerHook(list, fn) {
   list.push(fn);
   return function () {
     var i = list.indexOf(fn);
@@ -3153,7 +3166,7 @@ function registerHook (list, fn) {
   }
 }
 
-function createHref (base, fullPath, mode) {
+function createHref(base, fullPath, mode) {
   var path = mode === 'hash' ? '#' + fullPath : fullPath;
   return base ? cleanPath(base + '/' + path) : path
 }

@@ -55,6 +55,7 @@ export function createMatcher (
     redirectedFrom?: Location
   ): Route {
     const location = normalizeLocation(raw, currentRoute, false, router)
+    console.log('======== match:location ==========', location)
     const { name } = location
 
     if (name) {

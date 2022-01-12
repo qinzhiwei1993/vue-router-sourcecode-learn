@@ -23,7 +23,7 @@
         <router-view></router-view>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/vue/2.6.9/vue.js"></script>
     <script src="../../dist/vue-router.js"></script>
 
     <script>
@@ -40,8 +40,8 @@
         // 或者，只是一个组件配置对象。
         // 我们晚点再讨论嵌套路由。
         const routes = [
-            { path: '/foo', component: Foo },
-            { path: '/bar', component: Bar }
+            { path: '/foo', component: Foo, name: 'foo' },
+            { path: '/bar', component: Bar, name: 'bar' }
         ]
 
         // 3. 创建 router 实例，然后传 `routes` 配置
@@ -61,6 +61,12 @@
         }).$mount('#app')
 
         // 现在，应用已经启动了！
+
+
+        // window.addEventListener('popstate', console)
+        window.onpopstate = function (e) {
+            console.log('history状态变更', e)
+        }
 
     </script>
 
